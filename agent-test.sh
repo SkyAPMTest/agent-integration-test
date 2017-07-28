@@ -6,6 +6,7 @@ usage(){
 	echo -e "  -b, --branch, -t, --tag \t skywalking repository branch or tag"
 	echo -e "  -p, --only-pull-code \t\t only pull source code, not clone source code"
 	echo -e "      --skipReport \t\t skip report "
+	echo -e "			 --skipBuild \t\t skip build"
 }
 
 # environment check
@@ -64,6 +65,13 @@ checkoutSourceCode(){
 	echo $LAST_COMMIT
 }
 
+buildProject(){
+	PROJECT_DIR=$1;
+	if [ "$SKIP_BUILD" = "false" ]; then
+		cd $PROJECT_DIR && mvn clean package
+	fi
+}
+
 TEST_TOOL_GIT_URL=https://github.com/sky-walking/agent-integration-testtool.git
 TEST_TOOL_GIT_BRANCH=master
 TEST_CASES_GIT_URL=https://github.com/sky-walking/agent-integration-testcases.git
@@ -76,29 +84,34 @@ TEST_TIME=`date "+%Y-%m-%d-%H-%M"`
 RECIEVE_DATA_URL=http://127.0.0.1:12800/receiveData
 PULL_CODE=false
 SKIP_REPORT=false
+SKIP_BUILD=false
 
 until [ $# -eq 0 ]
 do
 	case "$1" in
-		-r | --repo ) 
-			AGENT_GIT_URL=$2; 
-			shift 2; 
+		-r | --repo )
+			AGENT_GIT_URL=$2;
+			shift 2;
 			;;
-		-b | --branch | -t | --tag ) 
-			AGENT_GIT_BRANCH=$2; 
-			shift 2; 
+		-b | --branch | -t | --tag )
+			AGENT_GIT_BRANCH=$2;
+			shift 2;
 			;;
-		-p | --only-pull-code ) 
+		-p | --only-pull-code )
 			PULL_CODE=true;
-			shift; 
+			shift;
 			;;
-		--skipReport ) 
+		--skipReport )
 			SKIP_REPORT=true;
-			shift; 
+			shift;
 			;;
-		* ) 
-			usage; 
-			exit 1; 
+		--skipBuild )
+			SKIP_BUILD=true;
+			shift;
+			;;
+		* )
+			usage;
+			exit 1;
 			;;
 	esac
 done
@@ -124,7 +137,7 @@ SOURCE_DIR="$WORKSPACE_DIR/sources"
 echo "clone agent source code"
 AGENT_COMMIT=`checkoutSourceCode ${AGENT_GIT_URL} $AGENT_GIT_BRANCH $SOURCE_DIR/skywalking`
 #echo "clone agent"
-cd $SOURCE_DIR/skywalking && mvn clean package
+buildProject $SOURCE_DIR/skywalking
 echo "agent branch: ${AGENT_GIT_BRANCH}, agent commit: ${AGENT_COMMIT}"
 #echo "checkout agent and mvn build"
 
@@ -145,7 +158,7 @@ cp  $SOURCE_DIR/skywalking/apm-sniffer/apm-agent/target/skywalking-agent.jar $AG
 echo "clone test tool source code"
 #echo "clone test tool and build"
 checkoutSourceCode $TEST_TOOL_GIT_URL $TEST_TOOL_GIT_BRANCH $SOURCE_DIR/test-tools
-cd $SOURCE_DIR/test-tools && mvn clean package
+buildProject $SOURCE_DIR/test-tools
 echo "copy test tools to ${WORKSPACE_DIR}"
 #echo "copy auto-test.jar"
 cp ${SOURCE_DIR}/test-tools/target/skywalking-autotest.jar ${WORKSPACE_DIR}
@@ -201,7 +214,7 @@ cp -f $REPORT_DIR/README.md $REPORT_DIR/${AGENT_GIT_BRANCH}/report-${TEST_TIME}.
 
 if [ "$SKIP_REPORT" = "false" ]; then
 	echo "push report...."
-	cd $REPORT_DIR 
+	cd $REPORT_DIR
 	git add $REPORT_DIR/report.log
 	git add $REPORT_DIR/README.md
 	git add $REPORT_DIR/${AGENT_GIT_BRANCH}/report-${TEST_TIME}.log
@@ -211,7 +224,3 @@ if [ "$SKIP_REPORT" = "false" ]; then
 else
 	echo "skipt push report"
 fi
-
-
-
-
