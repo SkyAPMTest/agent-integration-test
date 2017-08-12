@@ -5,8 +5,9 @@ usage(){
 	echo -e "  -r, --repo \t\t\t skywalking repository url"
 	echo -e "  -b, --branch, -t, --tag \t skywalking repository branch or tag"
 	echo -e "  -p, --only-pull-code \t\t only pull source code, not clone source code"
+	echo -e "  -t, --test-cases \t\t tes cases, split ,"
 	echo -e "      --skipReport \t\t skip report "
-	echo -e "			 --skipBuild \t\t skip build"
+	echo -e "      --skipBuild \t\t skip build"
 }
 
 # environment check
@@ -72,6 +73,8 @@ buildProject(){
 	fi
 }
 
+environmentCheck
+
 TEST_TOOL_GIT_URL=https://github.com/sky-walking/agent-integration-testtool.git
 TEST_TOOL_GIT_BRANCH=master
 TEST_CASES_GIT_URL=https://github.com/sky-walking/agent-integration-testcases.git
@@ -82,10 +85,27 @@ REPORT_GIT_URL=https://github.com/sky-walking/agent-integration-test-report.git
 REPORT_GIT_BRANCH=master
 TEST_TIME=`date "+%Y-%m-%d-%H-%M"`
 RECIEVE_DATA_URL=http://127.0.0.1:12800/receiveData
+TEST_CASES=()
+TEST_CASES_STR=""
 PULL_CODE=false
 SKIP_REPORT=false
 SKIP_BUILD=false
-
+PRG="$0"
+PRGDIR=`dirname "$PRG"`
+[ -z "$AGENT_TEST_HOME" ] && AGENT_TEST_HOME=`cd "$PRGDIR" >/dev/null; pwd`
+WORKSPACE_DIR="$AGENT_TEST_HOME/workspace"
+SOURCE_DIR="$WORKSPACE_DIR/sources"
+TEST_CASES_DIR="$WORKSPACE_DIR/testcases"
+for TEST_CASE in `ls $TEST_CASES_DIR`
+do
+	if [ -d "$TEST_CASES_DIR/$TEST_CASE" ]; then
+		TEST_CASES=(${TEST_CASES[*]} $TEST_CASE)
+		TEST_CASES_STR="$TEST_CASES_STR,$TEST_CASE"
+	fi
+done
+############## parse paremeters ##############
+#	parse paremeters
+##############################################
 until [ $# -eq 0 ]
 do
 	case "$1" in
@@ -100,6 +120,14 @@ do
 		-p | --only-pull-code )
 			PULL_CODE=true;
 			shift;
+			;;
+	 	-t | --test-cases )
+	 		TEST_CASES_STR=$2
+			OLD_IFS="$IFS"
+			IFS=","
+			TEST_CASES=($2)
+			IFS="$OLD_IFS"
+	 		shift 2;
 			;;
 		--skipReport )
 			SKIP_REPORT=true;
@@ -116,18 +144,8 @@ do
 	esac
 done
 
-environmentCheck
-
-PRG="$0"
-PRGDIR=`dirname "$PRG"`
-[ -z "$AGENT_TEST_HOME" ] && AGENT_TEST_HOME=`cd "$PRGDIR" >/dev/null; pwd`
-
-WORKSPACE_DIR="$AGENT_TEST_HOME/workspace"
 echo "clear Workspace"
 clearWorkspace
-
-SOURCE_DIR="$WORKSPACE_DIR/sources"
-
 ############## build agent ##############
 #	1. checkout agent source code
 #	2. switch branch
@@ -168,7 +186,6 @@ cp ${SOURCE_DIR}/test-tools/target/skywalking-autotest.jar ${WORKSPACE_DIR}
 #	2. switch branch
 ########################################
 echo "clone test cases"
-TEST_CASES_DIR="$WORKSPACE_DIR/testcases"
 #echo "clone test cases git url"
 checkoutSourceCode $TEST_CASES_GIT_URL $TEST_CASES_GIT_BRANCH ${TEST_CASES_DIR}
 
@@ -181,8 +198,14 @@ REPORT_DIR="$WORKSPACE_DIR/report"
 #echo "clone report "
 checkoutSourceCode ${REPORT_GIT_URL} ${REPORT_GIT_BRANCH} ${REPORT_DIR}
 
-for CASE_DIR in $(ls -d $TEST_CASES_DIR/*/)
+for TEST_CASE in ${TEST_CASES[@]}
 do
+	echo $TEST_CASE
+done
+
+for TEST_CASE in ${TEST_CASES[@]}
+do
+	CASE_DIR="$TEST_CASES_DIR/$TEST_CASE"
 	ESCAPE_PATH=$(echo "$AGENT_DIR" |sed -e 's/\//\\\//g' )
 	eval sed -i -e 's/\{AGENT_FILE_PATH\}/$ESCAPE_PATH/' $CASE_DIR/docker-compose.yml
 	echo "start docker container"
@@ -200,10 +223,12 @@ do
 	docker-compose -f ${CASE_DIR}/docker-compose.yml stop
 done
 
+exit
 echo "generate report...."
 java -DtestDate="$TEST_TIME" \
 	-DagentBranch="$AGENT_GIT_BRANCH" -DagentCommit="$AGENT_COMMIT" \
 	-DtestCasePath="$TEST_CASES_DIR" -DreportFilePath="$REPORT_DIR" \
+	-DtestCases="$TEST_CASES_STR"	\
 	-jar $WORKSPACE_DIR/skywalking-autotest.jar > $REPORT_DIR/report.log
 
 if [ ! -f "$REPORT_DIR/${AGENT_GIT_BRANCH}" ]; then
