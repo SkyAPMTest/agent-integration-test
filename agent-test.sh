@@ -75,13 +75,13 @@ buildProject(){
 
 environmentCheck
 
-TEST_TOOL_GIT_URL=https://github.com/sky-walking/agent-integration-testtool.git
+TEST_TOOL_GIT_URL=https://github.com/SkywalkingTest/agent-integration-testtool.git
 TEST_TOOL_GIT_BRANCH=master
-TEST_CASES_GIT_URL=https://github.com/sky-walking/agent-integration-testcases.git
+TEST_CASES_GIT_URL=https://github.com/SkywalkingTest/agent-integration-testcases.git
 TEST_CASES_GIT_BRANCH=master
-AGENT_GIT_URL=https://github.com/wu-sheng/sky-walking.git
+AGENT_GIT_URL=https://github.com/OpenSkywalking/skywalking.git
 AGENT_GIT_BRANCH=master
-REPORT_GIT_URL=https://github.com/sky-walking/agent-integration-test-report.git
+REPORT_GIT_URL=https://github.com/SkywalkingTest/agent-integration-test-report.git
 REPORT_GIT_BRANCH=master
 TEST_TIME=`date "+%Y-%m-%d-%H-%M"`
 RECIEVE_DATA_URL=http://127.0.0.1:12800/receiveData
@@ -158,14 +158,13 @@ AGENT_COMMIT=`checkoutSourceCode ${AGENT_GIT_URL} $AGENT_GIT_BRANCH $SOURCE_DIR/
 buildProject $SOURCE_DIR/skywalking
 echo "agent branch: ${AGENT_GIT_BRANCH}, agent commit: ${AGENT_COMMIT}"
 #echo "checkout agent and mvn build"
-
 AGENT_DIR="$WORKSPACE_DIR/agent"
 if [ ! -f "${AGENT_DIR}" ]; then
 	mkdir -p ${AGENT_DIR}
 fi
 echo "copy agent jar to $AGENT_DIR"
 #echo "copy agent"
-cp  $SOURCE_DIR/skywalking/apm-sniffer/apm-agent/target/skywalking-agent.jar $AGENT_DIR
+cp -r $SOURCE_DIR/skywalking/packages/skywalking-agent/* $AGENT_DIR/
 
 ############ build test tool ###########
 #	1. checkout test tool code
@@ -200,11 +199,6 @@ checkoutSourceCode ${REPORT_GIT_URL} ${REPORT_GIT_BRANCH} ${REPORT_DIR}
 
 for TEST_CASE in ${TEST_CASES[@]}
 do
-	echo $TEST_CASE
-done
-
-for TEST_CASE in ${TEST_CASES[@]}
-do
 	CASE_DIR="$TEST_CASES_DIR/$TEST_CASE"
 	ESCAPE_PATH=$(echo "$AGENT_DIR" |sed -e 's/\//\\\//g' )
 	eval sed -i -e 's/\{AGENT_FILE_PATH\}/$ESCAPE_PATH/' $CASE_DIR/docker-compose.yml
@@ -223,7 +217,7 @@ do
 	docker-compose -f ${CASE_DIR}/docker-compose.yml stop
 done
 
-exit
+
 echo "generate report...."
 java -DtestDate="$TEST_TIME" \
 	-DagentBranch="$AGENT_GIT_BRANCH" -DagentCommit="$AGENT_COMMIT" \
