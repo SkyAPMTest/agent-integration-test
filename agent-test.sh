@@ -95,23 +95,8 @@ PRGDIR=`dirname "$PRG"`
 [ -z "$AGENT_TEST_HOME" ] && AGENT_TEST_HOME=`cd "$PRGDIR" >/dev/null; pwd`
 WORKSPACE_DIR="$AGENT_TEST_HOME/workspace"
 SOURCE_DIR="$WORKSPACE_DIR/sources"
-
-######### downlod test cases ###########
-#	1. checkout test tool code
-#	2. switch branch
-########################################
-echo "clone test cases"
-#echo "clone test cases git url"
-checkoutSourceCode $TEST_CASES_GIT_URL $TEST_CASES_GIT_BRANCH ${TEST_CASES_DIR}
-
 TEST_CASES_DIR="$WORKSPACE_DIR/testcases"
-for TEST_CASE in `ls $TEST_CASES_DIR`
-do
-	if [ -d "$TEST_CASES_DIR/$TEST_CASE" ]; then
-		TEST_CASES=(${TEST_CASES[*]} $TEST_CASE)
-		TEST_CASES_STR="$TEST_CASES_STR,$TEST_CASE"
-	fi
-done
+
 ############## parse paremeters ##############
 #	parse paremeters
 ##############################################
@@ -188,6 +173,23 @@ buildProject $SOURCE_DIR/test-tools
 echo "copy test tools to ${WORKSPACE_DIR}"
 #echo "copy auto-test.jar"
 cp ${SOURCE_DIR}/test-tools/target/skywalking-autotest.jar ${WORKSPACE_DIR}
+
+######### downlod test cases ###########
+#	1. checkout test tool code
+#	2. switch branch
+########################################
+echo "clone test cases"
+#echo "clone test cases git url"
+checkoutSourceCode $TEST_CASES_GIT_URL $TEST_CASES_GIT_BRANCH ${TEST_CASES_DIR}
+if [ "$TEST_CASES_STR" nq "" ]; then
+	for TEST_CASE in `ls $TEST_CASES_DIR`
+	do
+		if [ -d "$TEST_CASES_DIR/$TEST_CASE" ]; then
+			TEST_CASES=(${TEST_CASES[*]} $TEST_CASE)
+			TEST_CASES_STR="$TEST_CASES_STR,$TEST_CASE"
+		fi
+	done
+fi
 
 ##### downlod report repository ########
 #	1. checkout report repository
