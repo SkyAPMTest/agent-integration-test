@@ -181,7 +181,7 @@ cp ${SOURCE_DIR}/test-tools/target/skywalking-autotest.jar ${WORKSPACE_DIR}
 echo "clone test cases"
 #echo "clone test cases git url"
 checkoutSourceCode $TEST_CASES_GIT_URL $TEST_CASES_GIT_BRANCH ${TEST_CASES_DIR}
-if [ "$TEST_CASES_STR" nq "" ]; then
+if [ "$TEST_CASES_STR" = "" ]; then
 	for TEST_CASE in `ls $TEST_CASES_DIR`
 	do
 		if [ -d "$TEST_CASES_DIR/$TEST_CASE" ]; then
