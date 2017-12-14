@@ -243,6 +243,11 @@ if [ "$SKIP_REPORT" = "false" ]; then
 	git add $REPORT_DIR/${AGENT_GIT_BRANCH}/report-${TEST_TIME}.log
 	git add $REPORT_DIR/${AGENT_GIT_BRANCH}/report-${TEST_TIME}.md
 	git commit -m "push report report-${TEST_TIME}.md" .
+
+	if [ ! -z "$GITHUB_TOKEN" ]; then
+		git config remote.origin.url https://{GITHUB_TOKEN}@github.com/SkywalkingTest/agent-integration-test-report.git
+	fi
+
 	git push origin master
 else
 	echo "skipt push report"
