@@ -5,7 +5,7 @@ usage(){
 	echo -e "  -r, --repo \t\t\t skywalking repository url"
 	echo -e "  -b, --branch, -t, --tag \t skywalking repository branch or tag"
 	echo -e "  -p, --only-pull-code \t\t only pull source code, not clone source code"
-	echo -e "  -t, --test-cases \t\t tes cases, split ,"
+	echo -e "  -t, --testCases \t\t tes cases, split ,"
 	echo -e "      --skipReport \t\t skip report "
 	echo -e "      --skipBuild \t\t skip build"
 }
@@ -79,7 +79,7 @@ TEST_TOOL_GIT_URL=https://github.com/SkywalkingTest/agent-integration-testtool.g
 TEST_TOOL_GIT_BRANCH=master
 TEST_CASES_GIT_URL=https://github.com/SkywalkingTest/agent-integration-testcases.git
 TEST_CASES_GIT_BRANCH=master
-AGENT_GIT_URL=https://github.com/OpenSkywalking/skywalking.git
+AGENT_GIT_URL=https://github.com/apache/incubator-skywalking.git
 AGENT_GIT_BRANCH=master
 REPORT_GIT_URL=https://github.com/SkywalkingTest/agent-integration-test-report.git
 REPORT_GIT_BRANCH=master
@@ -115,7 +115,7 @@ do
 			PULL_CODE=true;
 			shift;
 			;;
-	 	-t | --test-cases )
+	 	-t | --testCases )
 	 		TEST_CASES_STR=$2
 			OLD_IFS="$IFS"
 			IFS=","
@@ -190,6 +190,7 @@ if [ "$TEST_CASES_STR" = "" ]; then
 		fi
 	done
 fi
+echo "Here is the test cases: ${TEST_CASES_STR}"
 
 ##### downlod report repository ########
 #	1. checkout report repository
